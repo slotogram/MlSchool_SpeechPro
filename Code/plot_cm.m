@@ -1,0 +1,13 @@
+
+predicted = zeros(nspks,length(test_files));
+class=zeros(nspks,length(test_files));
+for i=1:length(test_files)
+    %находим максимальный вариант
+    predicted(:,i) = scores(((i-1)*nspks)+1:(i-1)*nspks+nspks);% предсказанный класс
+    %[~,predicted(i)] = max(scores(((i-1)*nspks)+1:(i-1)*nspks+nspks)); 
+    class(:,i) = labels(((i-1)*nspks)+1:(i-1)*nspks+nspks);% заданный класс
+    %[~,class(i)] = max(labels(((i-1)*nspks)+1:(i-1)*nspks+nspks)); 
+    %сравниваем с тем, который должен быть.
+end
+
+plotconfusion(class,predicted)
