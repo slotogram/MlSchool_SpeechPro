@@ -2,11 +2,15 @@
 fea_dir =  'C:\Samples\data_v_7_stc\audio'; %training directory
 test_dir = 'C:\Samples\data_v_7_stc\test'; %test directory
 test_meta = 'C:\Samples\data_v_7_stc\meta\meta.txt';
-gmm_file = 'gmms_.mat';
+
+ubmFile = 'gmms_1024.mat';
+bwFile = 'bw.mat';
+tFile = 'T.mat';
+pldaFile = 'plda.mat';
+
 
 %признаки
 featCol=[1:42,64,65];
-%featCol=[1:43,45,64,65];
 
 %Создаем список с файлами на обучение
 fid = fopen(test_meta, 'rt');
@@ -32,35 +36,24 @@ if isempty(p), parpool(nworkers); end
 
 %Check if UBM is already trained
 loadMem = true; %% load all files into the memory
-loadUBM = false; %% load UBM from disk
+loadUBM = true; %% load UBM from disk
 loadBW = false; %% load bw from disk
 loadT = false; %% load T from disk
 loadP = false; %% load PLDA from disk
 
+if ~exist('dataCut','var')
+    dataCut = load_data(filenames,featCol);
+end
 if loadUBM&&exist(ubmFile,'file')
   
-load(ubmFile);
-ubm = gmm;
-clear('gmm');
+    load(ubmFile);
+    clear('gmm_models');
 
 else    
-nmix = 256;
+nmix = 1024;
 final_niter = 10;
 ds_factor = 1;
-if  ~loadMem || ~exist('dataUBM','var') 
-    % сначала загружаем со всеми признаками
-	dataUBM = load_data(filenames);
-    
-end
 
-%%removing not needed features
-dataCut = dataUBM;
-nfiles = size(dataCut, 1);
-for ix = 1 : nfiles
-    dataCut{ix} = dataCut{ix}(featCol,:);
-end
-
-clear dataUBM;
 ubm = gmm_em(dataCut, nmix, final_niter, ds_factor, nworkers,'',featCol);%,vadCol,vadThr);
 
 end
@@ -124,7 +117,7 @@ end
 
 %% Step4: Scoring the verification trials
 
-clear dataCut;
+%clear dataCut;
 nspks = length(model_ids);
 model_ivs1 = zeros(tv_dim, nspks);
 model_ivs2 = model_ivs1;

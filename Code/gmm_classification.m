@@ -103,8 +103,8 @@ test_files = cellfun(@(x) fullfile(test_dir, x),...  %# Prepare path to files
                        test_files, 'UniformOutput', false);
                    
 if  ~loadMem || ~exist('dataTest','var') 
-    %% сначала загружаем со всеми признаками
-    %%featAll = 1:featMax;
+    % сначала загружаем со всеми признаками
+    %featAll = 1:featMax;
     nfiles = length(test_files);
     dataTest = cell(nfiles, 1);
     
@@ -115,7 +115,7 @@ if  ~loadMem || ~exist('dataTest','var')
     
 end
 
-%%removing not needed features
+%removing not needed features
 dataCut1 = dataTest;
 nfiles = length(dataCut1);
 for ix = 1 : nfiles
@@ -123,9 +123,9 @@ for ix = 1 : nfiles
 end
 
 
-%%итого подгрузили в память все тесты, чтобы каждый раз не читать с диска
+%итого подгрузили в память все тесты, чтобы каждый раз не читать с диска
 scores = score_gmm_trials2(gmm_models, dataCut1, trials, '',featCol,'','');
-%???
+save('scores_ubm','scores');
 
 %% Save scores in file
 
@@ -138,6 +138,7 @@ for i=1:nfiles
 	[mx(i),ind(i)] = max(scores(((i-1)*nspks)+1:(i-1)*nspks+nspks));
 end
 max_score=max(mx);
+%min_score=median(mx);
 min_score=min(mx);
 
 scores_p=(0.5*(scores-min_score)/(max_score-min_score))+0.5;

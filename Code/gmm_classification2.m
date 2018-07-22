@@ -31,7 +31,7 @@ if isempty(p), parpool(nworkers); end
 
 loadMem = true; %% load all files into the memory
 
-nmix = 128;
+nmix = 64;
 final_niter = 10;
 ds_factor = 1;
 if  ~loadMem || ~exist('dataUBM','var') 
@@ -109,6 +109,8 @@ end
 
 %%итого подгрузили в память все тесты, чтобы каждый раз не читать с диска
 scores = score_gmm_trials2(gmm_models, dataCut1, trials, '',featCol,'','');
+save('scores_gmm','scores');
+
 %% Save scores in file
 
 test_files2 = struct2cell(dir(strcat(test_dir,'\*.wav')));
@@ -120,6 +122,7 @@ for i=1:nfiles
 	[mx(i),ind(i)] = max(scores(((i-1)*nspks)+1:(i-1)*nspks+nspks));
 end
 max_score=max(mx);
+%min_score=median(mx);
 min_score=min(mx);
 
 scores_p=(0.5*(scores-min_score)/(max_score-min_score))+0.5;
