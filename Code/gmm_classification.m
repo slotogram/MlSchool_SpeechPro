@@ -3,9 +3,8 @@ test_dir = 'C:\Samples\data_v_7_stc\test'; %test directory
 test_meta = 'C:\Samples\data_v_7_stc\meta\meta.txt';
 gmm_file = 'gmms_.mat';
 
-%признаки
+%выбираем нужный вектор признаков
 featCol=[1:42,64,65];
-%featCol=[1:43,45,64,65];
 
 %Создаем список с файлами на обучение
 fid = fopen(test_meta, 'rt');
@@ -20,9 +19,7 @@ filenames = cellfun(@(x) strcat(x,'htk'),filenames, 'un',0);
 model_ids = unique(meta{5}, 'stable'); %выбираем все существующие классы
 
 
-
-%разбиваем всю выборку на обучение и тест
-
+%для параллельного исполнения
 nworkers = 4;
 nworkers = min(nworkers, feature('NumCores'));
 p = gcp('nocreate'); 
@@ -39,7 +36,7 @@ ubm = gmm;
 clear('gmm');
 
 else    
-nmix = 1024;
+nmix = 1024; %количество компонентов UBM
 final_niter = 10;
 ds_factor = 1;
 if  ~loadMem || ~exist('dataUBM','var') 
@@ -55,13 +52,13 @@ for ix = 1 : nfiles
     dataCut{ix} = dataCut{ix}(featCol,:);
 end
 
-ubm = gmm_em(dataCut, nmix, final_niter, ds_factor, nworkers,'',featCol);%,vadCol,vadThr);
+ubm = gmm_em(dataCut, nmix, final_niter, ds_factor, nworkers,'',featCol);% обучаем UBM
 
 end
 
 %% Step2: Adapting the speaker models from UBM
 
-map_tau = 10.0;
+map_tau = 10.0; 
 config = 'mvw';
 model_ids = unique(meta{5}, 'stable'); %выбираем все существующие классы
 
@@ -69,19 +66,19 @@ nspks = length(model_ids);
 gmm_models = cell(nspks, 1); 
 dataTrain = cell(nspks,1);
 
-for spk = 1 : nspks
+for spk = 1 : nspks %выбираем данные на каждую модель
     ids = find(ismember(meta{5}, model_ids{spk}));
     dataTrain{spk} = dataCut(ids);            
 end
 
 
-%%тут уже с загруженными данными проводим адаптацию
+%%тут уже с загруженными данными проводим адаптацию UBM
 for spk = 1 : nspks
     gmm_models{spk} = mapAdapt(dataTrain{spk}, ubm, map_tau, config,'',featCol,'','');
 end
 
 save(gmm_file,'ubm','gmm_models','featCol');
-%% Step3: Scoring the verification trials
+%% Step3: Scoring the classification trials
 
 %загружаем тестовые данные и составляем список испытаний
 test_files = struct2cell(dir(strcat(test_dir,'\*.htk')));
@@ -91,7 +88,7 @@ test_Ids = strtok(test_files,'_');
 model_ids = strtok(model_ids,'_'); % knocking fix
 %test_files1=strtok(test_files,'_');
 trials = zeros(nspks*length(test_files),2); %создаем тест на каждую модель для каждого файла
-labels = zeros(nspks*length(test_files),1);
+labels = zeros(nspks*length(test_files),1); %метки истинности теста
 for i=1:length(test_files)
     for j=1:nspks
         trials(((i-1)*nspks)+j,:)=[j,i];
@@ -104,7 +101,6 @@ test_files = cellfun(@(x) fullfile(test_dir, x),...  %# Prepare path to files
                    
 if  ~loadMem || ~exist('dataTest','var') 
     % сначала загружаем со всеми признаками
-    %featAll = 1:featMax;
     nfiles = length(test_files);
     dataTest = cell(nfiles, 1);
     
@@ -123,11 +119,11 @@ for ix = 1 : nfiles
 end
 
 
-%итого подгрузили в память все тесты, чтобы каждый раз не читать с диска
+%получаем результаты классификации
 scores = score_gmm_trials2(gmm_models, dataCut1, trials, '',featCol,'','');
 save('scores_ubm','scores');
 
-%% Save scores in file
+%% Save scores to file
 
 test_files2 = struct2cell(dir(strcat(test_dir,'\*.wav')));
 test_files2 =  test_files2(1,1:473)'; %убрали unknown, так как для них неизвестны классы
@@ -135,13 +131,13 @@ model_ids = unique(meta{5}, 'stable'); %выбираем все существующие классы
 mx = zeros(nfiles,1);
 ind = zeros(nfiles,1);
 for i=1:nfiles
-	[mx(i),ind(i)] = max(scores(((i-1)*nspks)+1:(i-1)*nspks+nspks));
+	[mx(i),ind(i)] = max(scores(((i-1)*nspks)+1:(i-1)*nspks+nspks)); %берем максимумы оценок
 end
 max_score=max(mx);
 %min_score=median(mx);
 min_score=min(mx);
 
-scores_p=(0.5*(scores-min_score)/(max_score-min_score))+0.5;
+scores_p=(0.5*(scores-min_score)/(max_score-min_score))+0.5; %вычисляем вероятность (из-за GMM)
 
 fid = fopen('result.txt','w');
 for i=1:nfiles
