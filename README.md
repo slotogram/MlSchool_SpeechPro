@@ -8,5 +8,7 @@
 Детектор наличия факта события реализован не был.
 
 Для воспроизведения результатов необходимо:
-1. Извлечь признаки. Признаки извлекаются с помощью библиотеки [OpenSmile](http://opensmile.audeering.com/) (используется конфигурационный файл AudioFeatures.conf). Можно использовать PowerShell скрипт Get-ChildItem -Path C:\Samples\data_v_7_stc -Recurse -Include *.wav | Foreach {$st = join-path ([system.io.fileinfo]$_).DirectoryName  ([system.io.fileinfo]$_).BaseName;  $st2 = $st+".htk"; E:\work\Aspirant\opensmile-2.3.0\bin\Win32\SMILExtract.exe -l 0 -C E:\work\ML\MlSchool_SpeechPro\MlSchool_SpeehPro\AudioFeatures.conf -I $_.fullname -O  $st2}
+1. Извлечь признаки. Признаки извлекаются с помощью библиотеки [OpenSmile](http://opensmile.audeering.com/) (используется конфигурационный файл AudioFeatures.conf). Можно использовать PowerShell скрипт:
+
+ Get-ChildItem -Path C:\Samples\data_v_7_stc -Recurse -Include *.wav | Foreach {$st = join-path ([system.io.fileinfo]$_).DirectoryName  ([system.io.fileinfo]$_).BaseName;  $st2 = $st+".htk"; E:\work\Aspirant\opensmile-2.3.0\bin\Win32\SMILExtract.exe -l 0 -C E:\work\ML\MlSchool_SpeechPro\MlSchool_SpeehPro\AudioFeatures.conf -I $_.fullname -O  $st2}
 2. С помощью Matlab запустить скрипт gmm_classification_final.m. В первых строках кода указываются каталоги с данными.
