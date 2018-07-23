@@ -86,7 +86,10 @@ test_files = struct2cell(dir(strcat(test_dir,'\*.htk')));
 test_files =  test_files(1,1:473)'; %убрали unknown, так как для них неизвестны классы
 
 test_Ids = strtok(test_files,'_');
-model_ids = strtok(model_ids,'_'); % knocking fix
+model_ids = strtok(unique(meta{5}, 'stable'),'_'); % knocking fix
+model_ids = [model_ids ;{'unknown'}];
+nspks=length(model_ids);
+gmm_models = [gmm_models ;{ubm}];
 
 trials = zeros(nspks*length(test_files),2); %создаем тест на каждую модель для каждого файла
 labels = zeros(nspks*length(test_files),1); %метки истинности теста
@@ -128,7 +131,7 @@ save('scores_ubm','scores');
 
 test_files2 = struct2cell(dir(strcat(test_dir,'\*.wav')));
 test_files2 =  test_files2(1,1:473)'; %убрали unknown, так как для них неизвестны классы
-model_ids = unique(meta{5}, 'stable'); %выбираем все существующие классы
+%model_ids = unique(meta{5}, 'stable'); %выбираем все существующие классы
 mx = zeros(nfiles,1);
 ind = zeros(nfiles,1);
 for i=1:nfiles
