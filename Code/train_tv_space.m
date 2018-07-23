@@ -119,7 +119,7 @@ RU = zeros(tv_dim, nmix * ndim);
 I = eye(tv_dim);
 T_invS =  bsxfun(@rdivide, T, S');
 
-parts = 125; % modify this based on your resources
+parts = 25; % modify this based on your resources
 nbatch = floor( nfiles/parts + 0.99999 );
 for batch = 1 : nbatch,
     start = 1 + ( batch - 1 ) * parts;

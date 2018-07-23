@@ -1,3 +1,4 @@
+%GMM-UBM model sound classification
 fea_dir =  'C:\Samples\data_v_7_stc\audio'; %training directory
 test_dir = 'C:\Samples\data_v_7_stc\test'; %test directory
 test_meta = 'C:\Samples\data_v_7_stc\meta\meta.txt';
@@ -58,7 +59,7 @@ end
 
 %% Step2: Adapting the speaker models from UBM
 
-map_tau = 10.0; 
+map_tau = 6.0; 
 config = 'mvw';
 model_ids = unique(meta{5}, 'stable'); %выбираем все существующие классы
 
@@ -86,7 +87,7 @@ test_files =  test_files(1,1:473)'; %убрали unknown, так как для них неизвестны 
 
 test_Ids = strtok(test_files,'_');
 model_ids = strtok(model_ids,'_'); % knocking fix
-%test_files1=strtok(test_files,'_');
+
 trials = zeros(nspks*length(test_files),2); %создаем тест на каждую модель для каждого файла
 labels = zeros(nspks*length(test_files),1); %метки истинности теста
 for i=1:length(test_files)
@@ -134,7 +135,7 @@ for i=1:nfiles
 	[mx(i),ind(i)] = max(scores(((i-1)*nspks)+1:(i-1)*nspks+nspks)); %берем максимумы оценок
 end
 max_score=max(mx);
-%min_score=median(mx);
+
 min_score=min(mx);
 
 scores_p=(0.5*(scores-min_score)/(max_score-min_score))+0.5; %вычисляем вероятность (из-за GMM)
@@ -148,7 +149,7 @@ fclose(fid);
 
 %% Step4: Computing the EER and plotting the DET curve
 
-[eer, dcf1, dcf2] = compute_eer(scores, labels, true);
+[eer, dcf1, dcf2] = compute_eer(scores, labels, true); % просто ради интереса.
 
 %% Computing classification error
 TP=0;
@@ -162,4 +163,6 @@ for i=1:length(test_files)
    
 end
 TP/length(test_files)
-plot_cm;
+plot_cm; %рисуем confusion matrix. Работает если есть NN Toolbox
+
+

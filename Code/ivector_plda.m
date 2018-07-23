@@ -3,7 +3,7 @@ fea_dir =  'C:\Samples\data_v_7_stc\audio'; %training directory
 test_dir = 'C:\Samples\data_v_7_stc\test'; %test directory
 test_meta = 'C:\Samples\data_v_7_stc\meta\meta.txt';
 
-ubmFile = 'gmms_1024.mat';
+ubmFile = 'gmms_MFC20EDVZ.mat';
 bwFile = 'bw.mat';
 tFile = 'T.mat';
 pldaFile = 'plda.mat';
@@ -20,6 +20,9 @@ filenames = meta{1};
 filenames = cellfun(@(x) fullfile(fea_dir, x),...  %# Prepare path to files
                        filenames, 'UniformOutput', false);
 filenames = cellfun(@(x) x(1:end-3),filenames, 'un',0);
+
+%filenames_i = extractBefore(filenames,'_time_stretch');
+
 filenames = cellfun(@(x) strcat(x,'htk'),filenames, 'un',0);
 
 model_ids = unique(meta{5}, 'stable'); %выбираем все существующие классы
@@ -50,7 +53,7 @@ if loadUBM&&exist(ubmFile,'file')
     clear('gmm_models');
 
 else    
-nmix = 1024;
+nmix = 256;
 final_niter = 10;
 ds_factor = 1;
 
@@ -93,20 +96,20 @@ if loadP&&exist(pldaFile,'file')
     load(pldaFile);
 
 else
-lda_dim = 200;
+lda_dim = 50;
 
 nphi    = 200;
 niter   = 10;
 
-dev_ivs = zeros(tv_dim, length(dataCut));
-parfor file = 1 : length(dataCut)
+dev_ivs = zeros(tv_dim, length(filenames));
+parfor file = 1 : length(filenames)
     dev_ivs(:, file) = extract_ivector(stats{file}, ubm, T);
 end
 % reduce the dimensionality with LDA
 spk_labs = meta{5};
 nSpeakers = size(model_ids,1);
 
-lda_dim = min(lda_dim, nSpeakers-1);
+%lda_dim = min(lda_dim, nSpeakers-1);
 V = lda(dev_ivs, spk_labs);
 dev_ivs = V(:, 1 : lda_dim)' * dev_ivs;
 %------------------------------------
@@ -141,7 +144,7 @@ test_files =  test_files(1,1:473)'; %убрали unknown, так как для них неизвестны 
 
 test_Ids = strtok(test_files,'_');
 model_ids = strtok(model_ids,'_'); % knocking fix
-%test_files1=strtok(test_files,'_');
+
 trials = zeros(nspks*length(test_files),2); %создаем тест на каждую модель для каждого файла
 labels = zeros(nspks*length(test_files),1);
 Kmodel = zeros(nspks*length(test_files),1);
@@ -150,8 +153,8 @@ for i=1:length(test_files)
     for j=1:nspks
         trials(((i-1)*nspks)+j,:)=[j,i];
         labels(((i-1)*nspks)+j) = startsWith(test_files(i),model_ids(j));
-        Kmodel = j;
-        Ktest = i;
+        Kmodel(((i-1)*nspks)+j) = j;
+        Ktest(((i-1)*nspks)+j) = i;
     end
 end
 
@@ -176,7 +179,7 @@ scores2 = score_gplda_trials(plda, model_ivs2, test_ivs);
 scores2 = scores2(linearInd); % select the valid trials
 
 %% Step5: Computing the EER and plotting the DET curve
-labels = C{3};
+
 eer1 = compute_eer(scores1(linearInd), labels, true); % IV averaging
 hold on
 eer2 = compute_eer(scores2(linearInd), labels, true); % stats averaging
@@ -185,7 +188,7 @@ eer2 = compute_eer(scores2(linearInd), labels, true); % stats averaging
 %[eer, dcf1, dcf2] = compute_eer(scores1(linearInd), labels, false);
 
 %% Computing classification error
-scores = scores2(linearInd);
+scores = scores1(linearInd);
 TP=0;
 for i=1:length(test_files)
     %находим максимальный вариант
